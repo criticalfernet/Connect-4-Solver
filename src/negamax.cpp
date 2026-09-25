@@ -1,13 +1,13 @@
 #include "negamax.h"
 
-constexpr int MAX_DEPTH = 10;
+constexpr int MAX_DEPTH = 30;
 
 int negamax(const Board &board, int depth)
 {
     if (depth == 0) return 0;
     if(board.countMoves() == Board::WIDTH*Board::HEIGHT) return 0;
 
-    for(int x = 0; x < Board::WIDTH; x++) {
+    for(int x = 1; x <= Board::WIDTH; x++) {
         if(board.canPlay(x) && board.isWinningMove(x)) {
             return board.getScore();
         }
@@ -15,7 +15,7 @@ int negamax(const Board &board, int depth)
 
     int bestScore = -Board::WIDTH * Board::HEIGHT;
 
-    for(int x = 0; x < Board::WIDTH; x++) {
+    for(int x = 1; x <= Board::WIDTH; x++) {
         if(board.canPlay(x)) {
             Board b2(board);
             b2.play(x);

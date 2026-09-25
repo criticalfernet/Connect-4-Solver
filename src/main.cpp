@@ -8,7 +8,7 @@ void clearScreen() {
 
 int main() {
     Board board("");
-
+    board.print();
     int col;
 
     while (true) {
