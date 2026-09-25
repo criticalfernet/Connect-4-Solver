@@ -1,19 +1,55 @@
-#include "headers/Board.h"
-#include "iostream"
+#include "Board.h"
 
-bool Board::canPlay(int col) const {
+#include <iostream>
+#include <stdexcept>
+
+Board::Board(const std::string &moves)
+{
+    for (char c : moves)
+    {
+        int column = c - '0';
+
+        if (!canPlay(column))
+        {
+            throw std::invalid_argument("Invalid position");
+        }
+
+        play(column);
+    }
+}
+
+unsigned int Board::countMoves() const
+{
+    return moves;
+}
+
+int Board::getPlayer() const
+{
+    return currentPlayer;
+}
+
+int Board::getScore() const
+{
+    return (WIDTH * HEIGHT + 1 - countMoves()) / 2;
+}
+
+bool Board::canPlay(int col) const
+{
     if (col < 1 || col > WIDTH)
         return false;
 
     return board[HEIGHT - 1][col - 1] == 0;
 }
 
-void Board::play(int col) {
+void Board::play(int col)
+{
     if (!canPlay(col))
         return;
 
-    for (int row = 0; row < HEIGHT; ++row) {
-        if (board[row][col - 1] == 0) {
+    for (int row = 0; row < HEIGHT; ++row)
+    {
+        if (board[row][col - 1] == 0)
+        {
             board[row][col - 1] = currentPlayer;
             currentPlayer = 3 - currentPlayer;
             moves++;
@@ -22,7 +58,8 @@ void Board::play(int col) {
     }
 }
 
-bool Board::isWinningMove(int col) const {
+bool Board::isWinningMove(int col) const
+{
     if (!canPlay(col))
         return false;
 
@@ -38,13 +75,14 @@ bool Board::isWinningMove(int col) const {
         {1, 0},
         {0, 1},
         {1, 1},
-        {1, -1}
-    };
+        {1, -1}};
 
-    for (const auto& direction : directions) {
+    for (const auto &direction : directions)
+    {
         int count = 1;
 
-        for (int i = 1; i < 4; ++i) {
+        for (int i = 1; i < 4; ++i)
+        {
             int r = row + direction[1] * i;
             int c2 = c + direction[0] * i;
 
@@ -57,7 +95,8 @@ bool Board::isWinningMove(int col) const {
             ++count;
         }
 
-        for (int i = 1; i < 4; ++i) {
+        for (int i = 1; i < 4; ++i)
+        {
             int r = row - direction[1] * i;
             int c2 = c - direction[0] * i;
 
@@ -77,14 +116,17 @@ bool Board::isWinningMove(int col) const {
     return false;
 }
 
-void Board::print() const {
+void Board::print() const
+{
     std::cout << std::endl;
     std::cout << "===============================\n";
 
-    for (int row = HEIGHT - 1; row >= 0; --row) {
+    for (int row = HEIGHT - 1; row >= 0; --row)
+    {
         std::cout << "|";
 
-        for (int col = 0; col < WIDTH; ++col) {
+        for (int col = 0; col < WIDTH; ++col)
+        {
             char piece = ' ';
 
             if (board[row][col] == 1)
@@ -99,13 +141,4 @@ void Board::print() const {
     }
 
     std::cout << "===============================\n";
-}
-
-unsigned int Board::countMoves() const {
-    return moves;
-} 
-
-
-int Board::getScore() const {
-    return (Board::WIDTH*Board::HEIGHT + 1 - this->countMoves())/2;
 }

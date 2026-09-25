@@ -1,13 +1,12 @@
 CXX = cl
+CXXFLAGS = /std:c++20 /EHsc /nologo /Iheaders
 
-CXXFLAGS = /std:c++20 /EHsc /nologo
+CORE = build\Board.obj build\negamax.obj build\alphabeta.obj
 
 all:
-	@$(CXX) $(CXXFLAGS) /c src\main.cpp /Fo:build\main.obj > nul
-	@$(CXX) $(CXXFLAGS) /c src\Board.cpp /Fo:build\Board.obj > nul
-	@$(CXX) $(CXXFLAGS) /c src\negamax.cpp /Fo:build\negamax.obj > nul
-	@$(CXX) $(CXXFLAGS) /c src\alphabeta.cpp /Fo:build\alphabeta.obj > nul
+	@for %f in (src\*.cpp) do @$(CXX) $(CXXFLAGS) /c %f /Fo:build\ > nul 2>&1
 
-	@$(CXX) build\main.obj build\Board.obj build\negamax.obj build\alphabeta.obj /Fe:build\main.exe /Fd:build\main.pdb > nul
+	@$(CXX) build\main.obj $(CORE) /Fe:build\main.exe /Fd:build\main.pdb > nul 2>&1
+	@$(CXX) build\benchmark.obj $(CORE) /Fe:build\benchmark.exe /Fd:build\benchmark.pdb > nul 2>&1
 
 	@build\main.exe

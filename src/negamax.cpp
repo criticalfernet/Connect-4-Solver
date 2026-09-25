@@ -1,8 +1,9 @@
-#include "headers/negamax.h"
+#include "negamax.h"
+
+constexpr int MAX_DEPTH = 10;
 
 int negamax(const Board &board, int depth)
 {
-
     if (depth == 0) return 0;
     if(board.countMoves() == Board::WIDTH*Board::HEIGHT) return 0;
 
@@ -25,9 +26,6 @@ int negamax(const Board &board, int depth)
 
     return bestScore;
 }
-
-
-constexpr int MAX_DEPTH = 5;
 
 int negamax(const Board &board)
 {

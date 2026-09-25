@@ -1,4 +1,6 @@
-#include "headers/alphabeta.h"
+#include "alphabeta.h"
+
+constexpr int MAX_DEPTH = 10;
 
 int alphabeta(const Board &board, int depth, int alpha, int beta)
 {
@@ -29,8 +31,6 @@ int alphabeta(const Board &board, int depth, int alpha, int beta)
     return bestScore;
 }
 
-
-constexpr int MAX_DEPTH = 10;
 
 int alphabeta(const Board &board)
 {
