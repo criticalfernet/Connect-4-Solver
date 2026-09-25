@@ -1,6 +1,6 @@
 #include <iostream>
 #include "headers/Board.h"
-#include "headers/negamax.h"
+#include "headers/alphabeta.h"
 
 void clearScreen() {
     std::cout << "\033[2J\033[H";
@@ -26,7 +26,7 @@ int main() {
             std::cout << "Player " << player << " wins!" << std::endl;
             break;
         }
-        std::cout << "Score: " << negamax(board) << std::endl;
+        std::cout << "Score: " << alphabeta(board) << std::endl;
     }
 
     return 0;

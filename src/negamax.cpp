@@ -27,7 +27,7 @@ int negamax(const Board &board, int depth)
 }
 
 
-int MAX_DEPTH = 5;
+constexpr int MAX_DEPTH = 5;
 
 int negamax(const Board &board)
 {

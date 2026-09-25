@@ -6,7 +6,8 @@ all:
 	@$(CXX) $(CXXFLAGS) /c src\main.cpp /Fo:build\main.obj > nul
 	@$(CXX) $(CXXFLAGS) /c src\Board.cpp /Fo:build\Board.obj > nul
 	@$(CXX) $(CXXFLAGS) /c src\negamax.cpp /Fo:build\negamax.obj > nul
+	@$(CXX) $(CXXFLAGS) /c src\alphabeta.cpp /Fo:build\alphabeta.obj > nul
 
-	@$(CXX) build\main.obj build\Board.obj build\negamax.obj /Fe:build\main.exe /Fd:build\main.pdb > nul
+	@$(CXX) build\main.obj build\Board.obj build\negamax.obj build\alphabeta.obj /Fe:build\main.exe /Fd:build\main.pdb > nul
 
 	@build\main.exe
