@@ -23,7 +23,7 @@ for algorithm, group in df.groupby("algorithm"):
     )
 
     rolling = group["time_us"].rolling(
-        window=200,
+        window=100,
         min_periods=1
     ).median()
 
@@ -51,6 +51,7 @@ plt.grid(
 plt.legend()
 plt.tight_layout()
 
-plt.savefig("results/ab_vs_mnmx.png", dpi=300, bbox_inches="tight")
+# plt.savefig("results/ab_vs_mnmx.png", dpi=300, bbox_inches="tight")
+plt.savefig("results/ab_vs_moveOrder1.png", dpi=300, bbox_inches="tight")
 
 plt.show()

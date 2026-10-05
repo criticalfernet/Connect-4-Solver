@@ -1,12 +1,39 @@
-CXX = cl
-CXXFLAGS = /std:c++20 /EHsc /nologo /Iheaders
+CXX = g++
+CXXFLAGS = -Wall -Wextra -std=c++23 -Iheaders
 
-CORE = build\Board.obj build\negamax.obj build\alphabeta.obj
+RUN_TARGET = build/main
+BENCH_TARGET = build/bench
 
-all:
-	@for %f in (src\*.cpp) do @$(CXX) $(CXXFLAGS) /c %f /Fo:build\ > nul 2>&1
+SRC = $(wildcard src/*.cpp)
+OBJ = $(SRC:src/%.cpp=build/%.o)
 
-	@$(CXX) build\main.obj $(CORE) /Fe:build\main.exe /Fd:build\main.pdb > nul 2>&1
-	@$(CXX) build\benchmark.obj $(CORE) /Fe:build\benchmark.exe /Fd:build\benchmark.pdb > nul 2>&1
+BENCH_SRC = bench/benchmark.cpp
+BENCH_OBJ = build/benchmark.o
 
-	@build\main.exe
+
+$(RUN_TARGET): $(OBJ)
+	@mkdir -p build
+	$(CXX) $(OBJ) -o $@
+
+$(BENCH_TARGET): $(BENCH_OBJ)
+	@mkdir -p build
+	$(CXX) $(BENCH_OBJ) -o $@
+
+build/%.o: src/%.cpp
+	@mkdir -p build
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+build/benchmark.o: bench/benchmark.cpp
+	@mkdir -p build
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+run: $(RUN_TARGET)
+	./$(RUN_TARGET)
+
+bench: $(BENCH_TARGET)
+	./$(BENCH_TARGET)
+
+clean:
+	rm -r build
+
+.PHONY: run bench clean

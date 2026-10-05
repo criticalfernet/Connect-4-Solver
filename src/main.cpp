@@ -1,13 +1,13 @@
 #include <iostream>
 #include "Board.h"
-#include "alphabeta.h"
+#include "alphabetaMO1.h"
 
 void clearScreen() {
     std::cout << "\033[2J\033[H";
 }
 
 int main() {
-    Board board("");
+    Board board("676352563513445344436141267136571");
     board.print();
     int col;
 
@@ -26,7 +26,7 @@ int main() {
             std::cout << "Player " << player << " wins!" << std::endl;
             break;
         }
-        std::cout << "Score: " << alphabeta(board) << std::endl;
+        std::cout << "Score: " << alphabetaMO1(board) << std::endl;
     }
 
     return 0;

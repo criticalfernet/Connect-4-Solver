@@ -1,10 +1,10 @@
 #include "negamax.h"
 
-constexpr int MAX_DEPTH = 30;
+constexpr int MAX_DEPTH = 20;
 
 int negamax(const Board &board, int depth)
 {
-    if (depth == 0) return 0;
+    if (depth == 0) return 100;
     if(board.countMoves() == Board::WIDTH*Board::HEIGHT) return 0;
 
     for(int x = 1; x <= Board::WIDTH; x++) {
