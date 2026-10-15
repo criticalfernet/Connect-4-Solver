@@ -3,6 +3,7 @@
 #include "Board.hpp"
 #include "Alphabeta.hpp"
 
+
 int solve(const Board &board, bool weak = false) {
   const int remaining = Board::WIDTH * Board::HEIGHT - static_cast<int>(board.countMoves());
 

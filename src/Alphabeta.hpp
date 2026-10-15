@@ -4,7 +4,14 @@
 #include "TranspositionTable.hpp"
 #include "MoveSorter.hpp"
 
-static TranspositionTable tt(1u << 23);
+constexpr unsigned int log2c(unsigned int n) {
+  return n <= 1 ? 0 : log2c(n/2)+1;
+}
+
+static TranspositionTable<Board::WIDTH*(Board::HEIGHT+1),
+  log2c(Board::MAX_SCORE - Board::MIN_SCORE + 1) + 1,
+  23
+> tt;
 
 static int moveOrder[Board::WIDTH] = {3, 2, 4, 1, 5, 0, 6};
 
