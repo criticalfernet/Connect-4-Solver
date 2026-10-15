@@ -11,8 +11,9 @@ void clearScreen()
 }
 
 int main() {
-  Board board("6672375354252731116762237724");
+  Board board("6133112551");
   board.print();
+  cout << "Score: " << solve(board) << endl;
   int col;
 
   while (true){

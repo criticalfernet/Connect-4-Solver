@@ -49,6 +49,14 @@ public:
     currentPlayer = 3 - currentPlayer;
   }
 
+  void playMove(uint64_t move) {
+    currentPosition ^= mask;
+    mask |= move;
+
+    ++moves;
+    currentPlayer = 3 - currentPlayer;
+  }
+
   bool isWinningMove(int col) const{
     return winning_position() & possible() & column_mask(col-1);
   }
@@ -117,6 +125,10 @@ public:
     return ((UINT64_C(1) << HEIGHT)-1) << col*(HEIGHT+1);
   }
 
+  int moveScore(uint64_t move) const {
+    return popcount(compute_winning_position(currentPosition | move, mask));
+  }
+
 private:
   uint64_t currentPosition = 0;
   uint64_t mask = 0;
@@ -130,6 +142,12 @@ private:
 
   static uint64_t top_mask_col(int col){
     return (UINT64_C(1) << (HEIGHT - 1)) << col*(HEIGHT+1);
+  }
+
+  static unsigned int popcount(uint64_t m) {
+    unsigned int c = 0; 
+    for (c = 0; m; c++) m &= m - 1;
+    return c;
   }
 
   static uint64_t compute_winning_position(uint64_t position, uint64_t mask) {

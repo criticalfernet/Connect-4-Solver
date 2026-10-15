@@ -2,11 +2,11 @@
 
 #include "Board.hpp"
 #include "TranspositionTable.hpp"
+#include "MoveSorter.hpp"
 
-// constexpr int SCORE_OFFSET = 43;
-static TranspositionTable tt(1u << 20);
+static TranspositionTable tt(1u << 23);
 
-static int moveOrder[Board::WIDTH] = {4, 3, 5, 2, 6, 1, 7};
+static int moveOrder[Board::WIDTH] = {3, 2, 4, 1, 5, 0, 6};
 
 int alphabeta(const Board &board, int alpha, int beta)
 {
@@ -37,18 +37,22 @@ int alphabeta(const Board &board, int alpha, int beta)
     if (alpha >= beta) return beta;
   }
 
-  for (int i = 0; i < Board::WIDTH; i++)
-  {
-    int x = moveOrder[i];
-    if(next & Board::column_mask(x-1)){
+  MoveSorter movesS;
+
+  for (int i = Board::WIDTH; i--;) {
+    if(uint64_t move = next & Board::column_mask(moveOrder[i])) {
+       movesS.add(move, board.moveScore(move));
+    }
+  }
+
+  while(uint64_t next = movesS.getNext()){
       Board b2(board);
-      b2.play(x);
+      b2.playMove(next);
 
       int score = -alphabeta(b2, -beta, -alpha);
 
       if (score >= beta) return score;
       if (score > alpha) alpha = score;
-    }
   }
 
   tt.put(board.getKey(),  alpha - Board::MIN_SCORE + 1);
