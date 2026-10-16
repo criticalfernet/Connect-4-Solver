@@ -1,6 +1,6 @@
 #include <iostream>
 #include "Board.hpp"
-#include "solver.hpp"
+#include "Solver.hpp"
 #include "Alphabeta.hpp"
 
 using namespace std;

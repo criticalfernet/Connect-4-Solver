@@ -1,336 +1,161 @@
 # Connect 4
 
-A small C++ implementation of a Connect 4 board and a Negamax search.
+A C++23 terminal implementation of Connect 4 with a bitboard-based board representation and a search engine built around alpha-beta pruning.
 
-The project is currently focused on getting the board representation and
-search working. The program lets you enter moves, displays the board,
-checks for wins, and runs a depth-limited Negamax search after each
-move.
+The program starts from a predefined position, lets you enter columns, prints the board after each move, reports the position score, and displays a suggested move when it is Player 2's turn (or when debug output is enabled).
 
-## Current State
+## Features
 
-Right now the program contains:
+- 7-column × 6-row Connect 4 board.
+- Bitboard representation using 64-bit integers.
+- Position notation stored as the sequence of played columns.
+- Detection of immediate winning moves and non-losing moves.
+- Alpha-beta search with score-window narrowing.
+- Transposition table for reusing information about previously searched positions.
+- Move ordering based on potential winning positions.
+- Terminal interface for entering moves and displaying the board.
 
--   A `Board` class for representing a 7×6 Connect 4 board.
--   Move validation and move execution.
--   Win detection.
--   A simple terminal board display.
--   Position notation based on the sequence of played columns.
--   A Negamax search with a maximum depth of 5.
--   A score based on how many moves remain when a win is found.
+## Requirements
 
-The search is **not yet a complete Connect 4 solver**. If the search
-reaches depth `0`, it currently returns `0`.
+- A C++ compiler that supports C++23.
+- GNU Make, for the provided Makefile.
 
-------------------------------------------------------------------------
+The Makefile uses `g++` with `-Wall -Wextra -std=c++23`.
 
-## Board
+## Build and Run
 
-The board is represented as a 7-column by 6-row Connect 4 board.
+The Makefile expects the source files and headers to be in a `src/` directory, with `main.cpp` at `src/main.cpp` and the headers under `src/`.
 
-Columns are entered using numbers from `1` to `7`.
+Build the program:
 
-The `Board` class keeps track of:
-
--   The pieces on the board.
--   The current player.
--   The number of moves played.
-
-### Playing a Move
-
-`Board::play(int col)` first checks whether the column can be played.
-
-If it can, the piece is placed in the lowest empty position in that
-column. The current player is then switched:
-
-``` cpp
-currentPlayer = 3 - currentPlayer;
+```sh
+make
 ```
 
-The number of moves is also incremented.
+Build and run:
 
-Invalid moves are simply ignored.
-
-### Checking for a Win
-
-`Board::isWinningMove(int col)` checks whether playing in a given column
-would create four pieces in a row.
-
-It checks four directions:
-
--   Horizontal
--   Vertical
--   Diagonal `/`
--   Diagonal `\`
-
-The check looks in both directions from the piece that would be played.
-
-------------------------------------------------------------------------
-
-## Display
-
-The board can be printed using `Board::print()`.
-
-Player `1` is displayed as:
-
-``` text
-x
+```sh
+make run
 ```
 
-Player `2` is displayed as:
+Remove the build output:
 
-``` text
-o
+```sh
+make clean
 ```
 
-For example:
+The executable is written to `build/main`.
 
-``` text
-===============================
-|   |   |   |   |   |   |   |
-|   |   |   |   |   |   |   |
-|   |   |   |   |   |   |   |
-|   |   |   | o |   |   |   |
-|   |   |   | x |   |   |   |
-|   |   |   | o | x | x |   |
-===============================
+## Playing
+
+The program initializes the board with this move sequence:
+
+```text
+54554
 ```
 
-------------------------------------------------------------------------
+Enter a column number from `1` to `7` to play a move. A move is rejected if the input is invalid or the selected column is full.
+
+After a valid move, the board is printed and the program checks whether that move won the game. If it did, the winner is announced and the game ends. Otherwise, the program prints the position score.
+
+When it is Player 2's turn, the program also prints a suggested column. This is a recommendation only: the program still waits for you to enter the next move.
+
+Player 1 is shown as `x`, and Player 2 as `o`.
 
 ## Position Notation
 
-A position is represented by the sequence of columns that were played.
+A position is stored as the sequence of columns played, using digits `1` through `7`.
 
 For example:
 
-``` text
-434353
+```text
+54554
 ```
 
-means:
+represents five moves, in order:
 
-``` text
-Player 1 → column 4
-Player 2 → column 3
-Player 1 → column 4
-Player 2 → column 3
-Player 1 → column 5
-Player 2 → column 3
+1. Player 1 plays column 5.
+2. Player 2 plays column 4.
+3. Player 1 plays column 5.
+4. Player 2 plays column 5.
+5. Player 1 plays column 4.
+
+The sequence is kept in `Board::strPosition`.
+
+## Board Representation
+
+`Board` represents the board using two 64-bit masks:
+
+- `currentPlayerMask` stores the pieces belonging to the player whose turn it is.
+- `bothPlayerMask` stores all occupied cells.
+
+Each of the seven columns uses seven bit positions: six playable cells and one sentinel bit. This layout supports compact bitwise operations for legal moves and winning-position detection.
+
+The board provides methods to:
+
+- Check whether a column can accept a move (`canPlay`).
+- Play a column (`play`) or a move represented as a bit mask (`playMove`).
+- Check for an immediate winning move (`isWinningMove`).
+- Find playable, non-losing moves (`possibleNonLosingMoves`).
+- Score a candidate move by counting winning positions it would create (`moveScore`).
+- Print the board (`print`).
+
+## Search
+
+### Solver
+
+`solve` searches for a score using repeated alpha-beta calls with a narrow score window. It narrows the possible score range until it determines the returned score.
+
+The `weak` argument changes the initial score bounds to `-1` and `1`. The interactive program calls `solve(board)` to display the position score and uses `solve(child, WEAK)` when comparing candidate moves; `WEAK` is currently set to `true`.
+
+Before the search loop, `solve` checks whether the current player has an immediate winning move.
+
+### Alpha-Beta Search
+
+`alphabeta` searches legal non-losing moves and uses alpha-beta cutoffs to avoid exploring branches that cannot improve the result. It also tightens the score bounds using the number of moves remaining.
+
+If there are no non-losing moves, it returns a negative score based on the remaining game length. Near the end of the game, it can return `0` directly.
+
+### Move Ordering
+
+`MoveSorter` keeps candidate moves ordered by their move scores. `alphabeta` scores candidate moves using `Board::moveScore` before searching them.
+
+The search also uses a fixed column-order array:
+
+```cpp
+{3, 2, 4, 1, 5, 0, 6}
 ```
 
-The order matters, so different move sequences can produce different
-positions.
+These are zero-based column indices, so the order begins near the center of the board.
 
-An empty position is represented by:
+### Transposition Table
 
-``` text
-""
+`TranspositionTable` stores a key and value for searched positions. The search uses `Board::getKey()` as its position key and stores score-bound information so later searches can tighten their alpha-beta window.
+
+The table is a fixed-size, direct-mapped table. A key is mapped to one slot; storing another key in that slot replaces the previous entry. The table is reset when constructed.
+
+## Source Files
+
+| File | Purpose |
+|---|---|
+| `main.cpp` | Runs the interactive game loop, prints search statistics, and selects a suggested move. |
+| `Board.hpp` | Board state, move handling, board display, and position-related helpers. |
+| `BitBoard.hpp` | Bit masks and bitwise routines for legal moves and winning positions. |
+| `Solver.hpp` | Score search built around repeated alpha-beta calls. |
+| `Alphabeta.hpp` | Alpha-beta search, pruning, move ordering, and transposition-table use. |
+| `MoveSorter.hpp` | Orders candidate moves by score. |
+| `TranspositionTable.hpp` | Fixed-size storage for position keys and search values. |
+| `Makefile` | Build, run, and clean targets. |
+
+## Configuration in `main.cpp`
+
+The interactive program currently defines:
+
+```cpp
+int constexpr CURRENT = 2;
+bool constexpr DEBUG = false;
+bool constexpr WEAK = true;
 ```
 
-More details are documented in [Position's
-notation.md](Position’s%20notation.md).
+`CURRENT` controls which player's turn displays the suggested move. `DEBUG` makes the suggestion display regardless of whose turn it is. `WEAK` selects the bounded `solve(child, WEAK)` mode used while comparing candidate moves.
 
-------------------------------------------------------------------------
-
-## Negamax
-
-The search uses the Negamax variant of Minimax.
-
-The basic idea is that the score of a position from the opponent's point
-of view is the negative of the score from the current player's point of
-view.
-
-So instead of separately implementing maximizing and minimizing players,
-the search recursively does:
-
-``` cpp
-int score = -negamax(b2, depth - 1);
-```
-
-The best score is then selected from all legal moves.
-
-The current implementation starts with:
-
-``` cpp
-int bestScore = -Board::WIDTH * Board::HEIGHT;
-```
-
-and searches every playable column.
-
-### Search Depth
-
-The default maximum search depth is:
-
-``` cpp
-int MAX_DEPTH = 5;
-```
-
-So:
-
-``` cpp
-negamax(board)
-```
-
-is equivalent to:
-
-``` cpp
-negamax(board, 5);
-```
-
-The depth-limited search is intentional for now. Exploring the entire
-Connect 4 game tree grows very quickly.
-
-------------------------------------------------------------------------
-
-## Current Terminal Conditions
-
-The current Negamax implementation stops searching when one of these
-conditions is reached.
-
-### Depth reaches zero
-
-``` cpp
-if (depth == 0) return 0;
-```
-
-At the moment, the program does not have a positional evaluation
-function for positions that are simply reached because the search depth
-ran out.
-
-Therefore, those positions receive a score of `0`.
-
-### Board is full
-
-If all 42 cells are occupied:
-
-``` cpp
-if(board.countMoves() == Board::WIDTH * Board::HEIGHT)
-    return 0;
-```
-
-the game is treated as a draw.
-
-### A winning move exists
-
-Before searching deeper, the program checks every playable column.
-
-If the current player can win immediately:
-
-``` cpp
-if(board.canPlay(x) && board.isWinningMove(x)) {
-    return board.getScore();
-}
-```
-
-the position receives the current score.
-
-------------------------------------------------------------------------
-
-## Score
-
-The score for a winning position is calculated by:
-
-``` cpp
-(Board::WIDTH * Board::HEIGHT + 1 - this->countMoves()) / 2;
-```
-
-For a standard 7×6 board this becomes:
-
-``` cpp
-(43 - countMoves()) / 2;
-```
-
-The score is therefore based on how many moves have already been played.
-
-The current scoring idea is:
-
--   Positive score → a win was found.
--   Larger positive score → the win occurs earlier.
--   `0` → no win was found at that point, including depth exhaustion or
-    a full-board draw.
-
-Because the search is currently depth-limited and returns `0` at depth
-`0`, a `0` from the program should **not** yet be interpreted as a
-proven draw.
-
-The scoring details are documented in
-[benchmarking.md](benchmarking.md).
-
-------------------------------------------------------------------------
-
-## Program Flow
-
-The current `main()` loop works roughly like this:
-
-1.  Read a column number from the user.
-2.  Clear the terminal.
-3.  Check whether that move is a winning move.
-4.  Play the move.
-5.  Print the board.
-6.  If the move was winning, announce the winner and stop.
-7.  Otherwise, run Negamax and print its score.
-8.  Repeat.
-
-The relevant flow is:
-
-``` cpp
-int player = board.currentPlayer;
-bool win = board.isWinningMove(col);
-
-board.play(col);
-board.print();
-
-if (win) {
-    std::cout << "Player " << player << " wins!" << std::endl;
-    break;
-}
-
-std::cout << "Score: " << negamax(board) << std::endl;
-```
-
-------------------------------------------------------------------------
-
-## Files
-
-The main source files currently used by the project are:
-
-``` text
-src/
-├── main.cpp
-├── Board.cpp
-└── negamax.cpp
-```
-
-with their corresponding headers in:
-
-``` text
-headers/
-├── Board.h
-└── negamax.h
-```
-
-The repository also contains notes documenting the algorithms and
-notation.
-
-------------------------------------------------------------------------
-
-## Notes
-
--   [Position's notation.md](Position’s%20notation.md) --- describes how
-    positions are represented as move sequences.
--   [MINIMAX algorithm.md](MINIMAX%20algorithm.md) --- notes on Minimax
-    and the Negamax variant.
--   [benchmarking.md](benchmarking.md) --- documents the current
-    scoring/benchmarking idea.
-
-------------------------------------------------------------------------
-
-## What Comes Next
-
-The current implementation is intentionally simple.
-
-The next improvements can build on the existing board and Negamax
-implementation, such as adding a better evaluation for positions where
-the search reaches depth `0`, increasing search depth, and eventually
-working toward a complete Connect 4 solver.
