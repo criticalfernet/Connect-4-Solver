@@ -22,6 +22,20 @@ constexpr uint64_t next_prime(uint64_t n) {
   return n;
 }
 
+struct TTStats {
+    uint64_t probes = 0;
+    uint64_t hits = 0;
+    uint64_t misses = 0;
+    uint64_t cutoffs = 0;
+    uint64_t stores = 0;
+    uint64_t collisions = 0;
+    uint64_t replacements = 0;
+
+    void reset() {
+        *this = {};
+    }
+};
+
 template<unsigned int key_size, unsigned int value_size, unsigned int log_size>
 class TranspositionTable {
 private:
@@ -43,26 +57,40 @@ private:
 
   key_t* K;
   value_t* V;
+  bool* used;
 
   size_t index(uint64_t key) const {
-      return key % size;
+    return key % size;
+  }
+
+  key_t signature(uint64_t key) const {
+    return static_cast<key_t>(key / size);
   }
 
 public:
+  mutable TTStats stats;
+
   TranspositionTable() {
     K = new key_t[size];
     V = new value_t[size];
+    used = new bool[size]();
     reset();
   }
 
   ~TranspositionTable() {
     delete[] K;
     delete[] V;
+    delete[] used;
   }
+
+  TranspositionTable(const TranspositionTable&) = delete;
+  TranspositionTable& operator=(const TranspositionTable&) = delete;
 
   void reset() {
     std::fill_n(K, size, key_t{});
     std::fill_n(V, size, value_t{});
+    std::fill_n(used, size, false);
+    stats.reset();
   }
 
   void put(uint64_t key, value_t value) {
@@ -70,16 +98,32 @@ public:
     assert((value >> value_size) == 0);
 
     size_t pos = index(key);
-    K[pos] = static_cast<key_t>(key);
+    const key_t sig = signature(key);
+
+    stats.stores++;
+    if (used[pos] && K[pos] != sig) stats.replacements++;
+
+    K[pos] = sig;
     V[pos] = value;
+    used[pos] = true;
   }
 
   value_t get(uint64_t key) const {
     assert((key >> key_size) == 0);
 
+    stats.probes++;
+
     size_t pos = index(key);
-    if (K[pos] == static_cast<key_t>(key))
-        return V[pos];
+
+    if (used[pos] && K[pos] == signature(key)){
+      stats.hits++;
+      return V[pos];
+    }
+
+    stats.misses++;
+
+    if (used[pos]) stats.collisions++;
+
     return 0;
   }
 };

@@ -14,10 +14,13 @@ static TranspositionTable<
   23
 > tt;
 
+inline uint64_t nodesSearched = 0;
+
 static int moveOrder[Board::WIDTH] = {3, 2, 4, 1, 5, 0, 6};
 
 int alphabeta(const Board &board, int alpha, int beta)
 {
+  nodesSearched++;
   assert(alpha < beta);
   assert(!Bitboard::canWinNext(board.currentPlayerMask, board.bothPlayerMask));
 
@@ -42,7 +45,10 @@ int alphabeta(const Board &board, int alpha, int beta)
 
   if (beta > max){
     beta = max;
-    if (alpha >= beta) return beta;
+    if (alpha >= beta) {
+      tt.stats.cutoffs++;
+      return beta;
+    }
   }
 
   const uint64_t key = board.getKey();
@@ -51,14 +57,20 @@ int alphabeta(const Board &board, int alpha, int beta)
       min = val + 2*Board::MIN_SCORE - Board::MAX_SCORE - 2;
       if(alpha < min) {
         alpha = min;
-        if(alpha >= beta) return alpha;
+        if(alpha >= beta) {
+          tt.stats.cutoffs++;
+          return alpha;
+        }
       }
     }
     else { // we have an upper bound
       max = val + Board::MIN_SCORE - 1;
       if(beta > max) {
         beta = max;
-        if(alpha >= beta) return beta;
+        if (alpha >= beta) {
+          tt.stats.cutoffs++;
+          return beta;
+        }
       }
     }
   }

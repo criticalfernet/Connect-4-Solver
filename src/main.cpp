@@ -2,6 +2,7 @@
 #include "Board.hpp"
 #include "Solver.hpp"
 #include "Alphabeta.hpp"
+#include "Benchmark.hpp"
 
 using namespace std;
 
@@ -9,8 +10,7 @@ int constexpr CURRENT = 2;
 bool constexpr DEBUG = false;
 bool constexpr WEAK = true;
 
-void clearScreen()
-{
+void clearScreen(){
   cout << "\033[2J\033[H";
 }
 
@@ -42,7 +42,7 @@ void printStats(Board& board) {
 }
 
 int play() {
-  Board board("54554");
+  Board board("311113447");
   board.print();
   printStats(board);
   int col;
@@ -74,8 +74,13 @@ int play() {
 }
 
 
-int main(){
-  return play();
+int main(int argc, char* argv[])
+{
+    if (argc > 1 && string(argv[1]) == "bench")
+      return runBenchmark();
 
-  return 0;
+    if (argc > 1 && string(argv[1]) == "benchTT")
+      return runBenchmark(true);
+
+    return play();
 }

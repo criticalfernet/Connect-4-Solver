@@ -12,7 +12,13 @@ $(TARGET): $(SRC) $(HEADERS)
 run: $(TARGET)
 	./$(TARGET)
 
+bench: $(TARGET)
+	./$(TARGET) bench
+
+benchT: $(TARGET)
+	./$(TARGET) benchTT
+
 clean:
 	rm -rf build
 
-.PHONY: run clean
+.PHONY: run clean bench benchT

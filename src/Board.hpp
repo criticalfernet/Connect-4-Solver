@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <string>
 #include <cassert>
+#include <bit>
 #include "BitBoard.hpp"
 
 using namespace Bitboard;
@@ -124,7 +125,7 @@ public:
 
   int moveScore(uint64_t move) const {
     uint64_t newPlayerMask = currentPlayerMask | move;
-    return popcount(compute_winning_position(newPlayerMask, bothPlayerMask));
+    return std::popcount(compute_winning_position(newPlayerMask, bothPlayerMask));
   }
 
 
@@ -132,12 +133,4 @@ public:
 private:
   unsigned int moves = 0;
   int currentPlayer = 1;
-
-private:
-  static unsigned int popcount(uint64_t m) {
-    // counts how many bits are set in the bitboard m.
-    unsigned int c = 0; 
-    for (c = 0; m; c++) m &= m - 1;
-    return c;
-  }
 };
