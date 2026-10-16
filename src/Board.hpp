@@ -1,22 +1,23 @@
 #pragma once
 #include <cstdint>
 #include <string>
-#include <iostream>
-#include <stdexcept>
 #include <cassert>
+#include "BitBoard.hpp"
 
-constexpr static uint64_t bottom(int width, int height) {
-  return width == 0 ? 0 : bottom(width-1, height) | 1LL << (width-1)*(height+1);
-}
+using namespace Bitboard;
 
 class Board {
 public:
   static constexpr int WIDTH  = 7;
   static constexpr int HEIGHT = 6;
-  static const int MIN_SCORE = -(WIDTH*HEIGHT)/2 + 3;
-  static const int MAX_SCORE = (WIDTH*HEIGHT+1)/2 - 3;
+  static constexpr int MIN_SCORE = -(WIDTH*HEIGHT)/2 + 3;
+  static constexpr int MAX_SCORE = (WIDTH*HEIGHT+1)/2 - 3;
+  std::string strPosition = "";
 
-  explicit Board(const std::string& moves) {
+  uint64_t currentPlayerMask = 0; // mask for pieces of active player
+  uint64_t bothPlayerMask = 0; // mask for pieces of both players
+  
+  Board(const std::string& moves) {
     for (char c : moves) {
         int col = c - '0';
         if (!canPlay(col)) throw std::invalid_argument("Invalid position");
@@ -24,6 +25,7 @@ public:
     }
   }
 
+public:
   unsigned int countMoves() const {return moves;}
   int getPlayer() const {return currentPlayer;}
   int getScore() const {
@@ -31,34 +33,37 @@ public:
   }
 
   bool canPlay(int col) const {
-    if (col < 1 || col > WIDTH)return false;
+    if (col < 1 || col > WIDTH) return false;
+    col--;
 
-    --col;
-    return (mask & top_mask_col(col)) == 0;
+    return (bothPlayerMask & top_mask_col(col)) == 0; // checks if the top cell of the column is unoccupied
   }
 
   void play(int col) {
     if (!canPlay(col)) return;
+    strPosition += char('0' + col);
+    col--;
 
-    --col;
-
-    currentPosition ^= mask;
-    mask |= mask + bottom_mask_col(col);
-
-    ++moves;
+    currentPlayerMask ^= bothPlayerMask; // Switch to player making the move
     currentPlayer = 3 - currentPlayer;
+
+    uint64_t column = column_mask(col);
+    uint64_t emptyCell = (bothPlayerMask + bottom_mask_col(col)) & column;  // Find the lowest empty cell in this column
+    bothPlayerMask |= emptyCell;
+
+    moves++;
   }
 
   void playMove(uint64_t move) {
-    currentPosition ^= mask;
-    mask |= move;
+    currentPlayerMask ^= bothPlayerMask;
+    bothPlayerMask |= move;
 
     ++moves;
     currentPlayer = 3 - currentPlayer;
   }
 
   bool isWinningMove(int col) const{
-    return winning_position() & possible() & column_mask(col-1);
+    return canWinNext(currentPlayerMask, bothPlayerMask) & column_mask(col-1);
   }
 
   char symbolPlayer() const{
@@ -81,9 +86,9 @@ public:
 
             char piece = ' ';
 
-            if (currentPosition & bit)
+            if (currentPlayerMask & bit)
                 piece = (currentPlayer == 1) ? 'x' : 'o';
-            else if ((mask ^ currentPosition) & bit)
+            else if ((bothPlayerMask ^ currentPlayerMask) & bit)
                 piece = (currentPlayer == 1) ? 'o' : 'x';
 
             std::cout << ' ' << piece << " |";
@@ -96,14 +101,14 @@ public:
   }
 
   uint64_t getKey() const {
-    return currentPosition + mask;
+    return currentPlayerMask + bothPlayerMask;
   }
 
   uint64_t possibleNonLosingMoves() const {
-      assert(!canWinNext());
+      assert(!canWinNext(currentPlayerMask, bothPlayerMask));
 
-      uint64_t possible_mask = possible();
-      uint64_t opponent_win = opponent_winning_position();
+      uint64_t possible_mask = possible(bothPlayerMask);
+      uint64_t opponent_win = canOpponentWinNext(currentPlayerMask, bothPlayerMask);
 
       uint64_t forced_moves = possible_mask & opponent_win;
 
@@ -114,81 +119,25 @@ public:
               possible_mask = forced_moves;
       }
 
-      return possible_mask & ~(opponent_win >> 1);
-  }
-
-  bool canWinNext() const{
-    return winning_position() & possible();
-  }
-
-  static uint64_t column_mask(int col) {
-    return ((UINT64_C(1) << HEIGHT)-1) << col*(HEIGHT+1);
+      return possible_mask & ~(opponent_win >> 1); // >> 1 to ensure case of playing empty and making opponent win
   }
 
   int moveScore(uint64_t move) const {
-    return popcount(compute_winning_position(currentPosition | move, mask));
+    uint64_t newPlayerMask = currentPlayerMask | move;
+    return popcount(compute_winning_position(newPlayerMask, bothPlayerMask));
   }
 
-private:
-  uint64_t currentPosition = 0;
-  uint64_t mask = 0;
 
+
+private:
   unsigned int moves = 0;
   int currentPlayer = 1;
 
-  static uint64_t bottom_mask_col(int col) {
-    return UINT64_C(1) << (col * (HEIGHT + 1));
-  }
-
-  static uint64_t top_mask_col(int col){
-    return (UINT64_C(1) << (HEIGHT - 1)) << col*(HEIGHT+1);
-  }
-
+private:
   static unsigned int popcount(uint64_t m) {
+    // counts how many bits are set in the bitboard m.
     unsigned int c = 0; 
     for (c = 0; m; c++) m &= m - 1;
     return c;
-  }
-
-  static uint64_t compute_winning_position(uint64_t position, uint64_t mask) {
-    uint64_t r = (position << 1) & (position << 2) & (position << 3);
-
-    uint64_t p = (position << (HEIGHT+1)) & (position << 2*(HEIGHT+1));
-    r |= p & (position << 3*(HEIGHT+1));
-    r |= p & (position >> (HEIGHT+1));
-    p = (position >> (HEIGHT+1)) & (position >> 2*(HEIGHT+1));
-    r |= p & (position << (HEIGHT+1));
-    r |= p & (position >> 3*(HEIGHT+1));
-
-    p = (position << HEIGHT) & (position << 2*HEIGHT);
-    r |= p & (position << 3*HEIGHT);
-    r |= p & (position >> HEIGHT);
-    p = (position >> HEIGHT) & (position >> 2*HEIGHT);
-    r |= p & (position << HEIGHT);
-    r |= p & (position >> 3*HEIGHT);
-
-    p = (position << (HEIGHT+2)) & (position << 2*(HEIGHT+2));
-    r |= p & (position << 3*(HEIGHT+2));
-    r |= p & (position >> (HEIGHT+2));
-    p = (position >> (HEIGHT+2)) & (position >> 2*(HEIGHT+2));
-    r |= p & (position << (HEIGHT+2));
-    r |= p & (position >> 3*(HEIGHT+2));
-
-    return r & (board_mask ^ mask);
-  }
-
-  const static uint64_t bottom_mask = bottom(WIDTH, HEIGHT);
-  const static uint64_t board_mask = bottom_mask * ((1LL << HEIGHT)-1);
-
-  uint64_t winning_position() const {
-    return compute_winning_position(currentPosition, mask);
-  }
-
-  uint64_t opponent_winning_position() const {
-    return compute_winning_position(currentPosition ^ mask, mask);
-  }
-
-  uint64_t possible() const {
-    return (mask + bottom_mask) & board_mask;
   }
 };

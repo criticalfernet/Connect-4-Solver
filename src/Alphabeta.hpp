@@ -5,11 +5,12 @@
 #include "MoveSorter.hpp"
 
 constexpr unsigned int log2c(unsigned int n) {
-  return n <= 1 ? 0 : log2c(n/2)+1;
+  return n <= 1 ? 0 : log2c((n+1)/2)+1;
 }
 
-static TranspositionTable<Board::WIDTH*(Board::HEIGHT+1),
-  log2c(Board::MAX_SCORE - Board::MIN_SCORE + 1) + 1,
+static TranspositionTable<
+  Board::WIDTH*(Board::HEIGHT+1), //key size: 49 bits
+  log2c(Board::MAX_SCORE - Board::MIN_SCORE + 1) + 1, //value size: 7 bits to show 37 distinct values
   23
 > tt;
 
@@ -18,7 +19,7 @@ static int moveOrder[Board::WIDTH] = {3, 2, 4, 1, 5, 0, 6};
 int alphabeta(const Board &board, int alpha, int beta)
 {
   assert(alpha < beta);
-  assert(!board.canWinNext());
+  assert(!Bitboard::canWinNext(board.currentPlayerMask, board.bothPlayerMask));
 
   int moves = static_cast<int>(board.countMoves());
 
@@ -44,10 +45,28 @@ int alphabeta(const Board &board, int alpha, int beta)
     if (alpha >= beta) return beta;
   }
 
+  const uint64_t key = board.getKey();
+  if(int val = tt.get(key)) {
+    if(val > Board::MAX_SCORE - Board::MIN_SCORE + 1) { // we have an lower bound
+      min = val + 2*Board::MIN_SCORE - Board::MAX_SCORE - 2;
+      if(alpha < min) {
+        alpha = min;
+        if(alpha >= beta) return alpha;
+      }
+    }
+    else { // we have an upper bound
+      max = val + Board::MIN_SCORE - 1;
+      if(beta > max) {
+        beta = max;
+        if(alpha >= beta) return beta;
+      }
+    }
+  }
+
   MoveSorter movesS;
 
   for (int i = Board::WIDTH; i--;) {
-    if(uint64_t move = next & Board::column_mask(moveOrder[i])) {
+    if(uint64_t move = next & Bitboard::column_mask(moveOrder[i])) {
        movesS.add(move, board.moveScore(move));
     }
   }
@@ -58,7 +77,10 @@ int alphabeta(const Board &board, int alpha, int beta)
 
       int score = -alphabeta(b2, -beta, -alpha);
 
-      if (score >= beta) return score;
+      if(score >= beta) {
+        tt.put(key, score + Board::MAX_SCORE - 2*Board::MIN_SCORE + 2); // save the lower bound of the position
+        return score;
+      }
       if (score > alpha) alpha = score;
   }
 

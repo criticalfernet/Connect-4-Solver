@@ -4,7 +4,7 @@
 
 class MoveSorter {
 public:
-    void add(uint64_t move, int score) {
+    void add(uint64_t move, int score) { //insertion sort
       assert(size < Board::WIDTH);
       int pos = size++;
       for(; pos && entries[pos-1].score > score; --pos) 

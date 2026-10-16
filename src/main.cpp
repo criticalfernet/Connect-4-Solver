@@ -5,15 +5,46 @@
 
 using namespace std;
 
+int constexpr CURRENT = 2;
+bool constexpr DEBUG = false;
+bool constexpr WEAK = true;
+
 void clearScreen()
 {
   cout << "\033[2J\033[H";
 }
 
-int main() {
-  Board board("6133112551");
-  board.print();
+int getBestMove(Board &b){
+  int bestMove = 0;
+  int bestScore = Board::MIN_SCORE;
+
+  for (int col = 1; col <= Board::WIDTH; col++) {
+      if (!b.canPlay(col))continue;
+
+      Board child(b);
+      child.play(col);
+
+      int score = -solve(child,WEAK);
+
+      if (score > bestScore) {
+          bestScore = score;
+          bestMove = col;
+      }
+  }
+
+  return bestMove;
+}
+
+void printStats(Board& board) {
   cout << "Score: " << solve(board) << endl;
+  if(board.getPlayer() == CURRENT || DEBUG) 
+    cout << "Best Move: " << getBestMove(board) << endl;
+}
+
+int play() {
+  Board board("54554");
+  board.print();
+  printStats(board);
   int col;
 
   while (true){
@@ -36,8 +67,15 @@ int main() {
       cout << "Player " << player << " wins!" << endl;
       break;
     }
-    cout << "Score: " << solve(board) << endl;
+    printStats(board);
   }
+
+  return 0;
+}
+
+
+int main(){
+  return play();
 
   return 0;
 }
