@@ -9,7 +9,7 @@
 #include "Solver.hpp"
 
 using namespace std;
-int constexpr MAX_TESTS = 25;
+int constexpr MAX_TESTS = 100;
 
 void showTTStatsFunc() {
   const auto& s = tt.stats;
