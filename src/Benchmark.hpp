@@ -11,7 +11,7 @@
 using namespace std;
 int constexpr MAX_TESTS = 100;
 
-void showTTStatsFunc() {
+void showTTStatsFunc(uint64_t nodes) {
   const auto& s = tt.stats;
   double hitRate = s.probes
     ? 100.0 * s.hits / s.probes
@@ -21,9 +21,11 @@ void showTTStatsFunc() {
     ? 100.0 * s.collisions / s.probes
     : 0.0;
 
+  double cutoffRate = 100.0 * s.cutoffs / nodes;
+
   cout << setw(12) << s.probes
     << setw(10) << fixed << setprecision(2) << hitRate << "%"
-    << setw(12) << s.cutoffs
+    << setw(12) << fixed << setprecision(2) << cutoffRate << "%"
     << setw(12) << s.stores
     << setw(12) << fixed << setprecision(2) << collRate << "%";
 }
@@ -95,7 +97,7 @@ inline int runBenchmark(bool showTTStats = false)
       << setw(10) << fixed << setprecision(2) << (elapsed / 1'000'000.0)
       << setw(12) << static_cast<uint64_t>(nps);
 
-    if (showTTStats) showTTStatsFunc();
+    if (showTTStats) showTTStatsFunc(nodes);
 
     std::cout << "  " << (correct ? "PASS" : "FAIL") << '\n';
   }
