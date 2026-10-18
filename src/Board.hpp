@@ -13,7 +13,6 @@ public:
   static constexpr int HEIGHT = 6;
   static constexpr int MIN_SCORE = -(WIDTH*HEIGHT)/2 + 3;
   static constexpr int MAX_SCORE = (WIDTH*HEIGHT+1)/2 - 3;
-  std::string strPosition = "";
 
   uint64_t currentPlayerMask = 0; // mask for pieces of active player
   uint64_t bothPlayerMask = 0; // mask for pieces of both players
@@ -42,7 +41,6 @@ public:
 
   void play(int col) {
     if (!canPlay(col)) return;
-    strPosition += char('0' + col);
     col--;
 
     currentPlayerMask ^= bothPlayerMask; // Switch to player making the move
