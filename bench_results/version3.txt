@@ -104,4 +104,4 @@ Position         Expected    Actual       Nodes   Time (us)  Time (s)   Nodes/se
 Tests: 100 | Passed: 100 | Failed: 0
 Total nodes: 3539859017
 
-NOTE: First removed the strPsoition so there are no string copies. Second doubled the size of the TT.
+NOTE: First removed the strPosition so there are no string copies. Second doubled the size of the TT.

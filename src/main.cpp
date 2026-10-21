@@ -6,7 +6,7 @@
 
 using namespace std;
 
-int constexpr CURRENT = 2;
+int constexpr CURRENT = 1;
 bool constexpr DEBUG = false;
 bool constexpr WEAK = true;
 
@@ -42,7 +42,7 @@ void printStats(Board& board) {
 }
 
 int play() {
-  Board board("311113447");
+  Board board("");
   board.print();
   printStats(board);
   int col;
