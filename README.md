@@ -91,8 +91,6 @@ For example, `54554` means:
 4. Player 2 plays column 5.
 5. Player 1 plays column 4.
 
-The sequence is stored in `Board::strPosition`.
-
 ## Board Representation
 
 `Board` represents the board with two 64-bit masks:
